@@ -1,0 +1,34 @@
+EXEMPLO DE EMAIL APÓS CORREÇÃO DE ENCODING
+=========================================
+
+Subject: ALERTA DE SEGURANCA - Webhook Nubank - Permissoes Incorretas
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+RELATORIO DE SEGURANCA - WEBHOOK NUBANK
+
+Data/Hora: 13/06/2025 00:20:59
+
+PROBLEMAS DE PERMISSAO DETECTADOS:
+
+Arquivo: Script principal (webhook_nubank.php)
+Permissao atual: 755
+Permissao recomendada: 700
+Caminho completo: /root/nextcloud-sync/blesta/webhook_nubank/1206/webhook_nubank.php
+
+RECOMENDACOES DE SEGURANCA:
+
+1. Execute os seguintes comandos para corrigir as permissoes:
+
+chmod 700 '/root/nextcloud-sync/blesta/webhook_nubank/1206/webhook_nubank.php'
+
+2. Verifique se apenas o usuario correto tem acesso aos arquivos
+3. Considere mover arquivos sensiveis para fora do web root
+
+ATENCAO: Este email so e enviado quando ha divergencias de seguranca.
+
+Sistema de Segurança - Webhook Nubank
+
+=========================================
+NOTA: Acentos foram removidos para evitar problemas de codificação
+Os emails agora são enviados em UTF-8 limpo e legível!
