@@ -14,13 +14,13 @@ PROBLEMAS DE PERMISSAO DETECTADOS:
 Arquivo: Script principal (webhook_nubank.php)
 Permissao atual: 755
 Permissao recomendada: 700
-Caminho completo: /root/nextcloud-sync/blesta/webhook_nubank/1206/webhook_nubank.php
+Caminho completo: /home/user/nextcloud-sync/blesta/webhook_nubank/webhook_nubank.php
 
 RECOMENDACOES DE SEGURANCA:
 
 1. Execute os seguintes comandos para corrigir as permissoes:
 
-chmod 700 '/root/nextcloud-sync/blesta/webhook_nubank/1206/webhook_nubank.php'
+chmod 700 '/home/user/nextcloud-sync/blesta/webhook_nubank/webhook_nubank.php'
 
 2. Verifique se apenas o usuario correto tem acesso aos arquivos
 3. Considere mover arquivos sensiveis para fora do web root
