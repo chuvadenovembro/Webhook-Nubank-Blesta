@@ -1,20 +1,26 @@
 #!/usr/bin/php
 <?php
 /**
- * Webhook Nubank - Extrator de dados de emails de transferência PIX
+ * Webhook Nubank - Integração Completa com Blesta
  * 
  * Este script processa emails do Nubank (via pipe ou encaminhamento)
  * e extrai informações de pagamento: nome do pagador e valor recebido.
+ * Inclui integração completa com a API do Blesta para processamento
+ * automático de pagamentos.
  * 
  * Funciona tanto como pipe quanto processando arquivos .eml
+ * 
+ * @author Sistema de Webhook Nubank-Blesta
+ * @version 3.0
+ * @license MIT
  */
 
 // ===== CONFIGURAÇÕES DE SEGURANÇA =====
 // Validação de remetentes - CRÍTICO PARA SEGURANÇA
 define('VALIDACAO_REMETENTES_ATIVA', true);
 define('REMETENTES_AUTORIZADOS', [
-    'todomundo@nubank.com.br',  // Email oficial do Nubank
-    'contato@dominio.com'       // Email autorizado para encaminhamento
+    'todomundo@nubank.com.br',        // Email oficial do Nubank
+    'seu-email@seudominio.com'        // Substitua pelo seu email autorizado para encaminhamento
 ]);
 
 // Verificação de permissões de arquivos
@@ -24,7 +30,7 @@ define('VERIFICACAO_PERMISSOES_ATIVA', true);
 define('DEBUG_MODE', false);  // DESATIVADO EM PRODUÇÃO POR SEGURANÇA
 define('LOG_FILE', dirname(__FILE__) . '/webhook_nubank.log');
 define('CLIENT_MAP_FILE', dirname(__FILE__) . '/clientes_nubank.txt');
-define('ADMIN_EMAIL', 'admin@dominio.com');
+define('ADMIN_EMAIL', 'admin@seudominio.com');  // Substitua pelo seu email de admin
 
 // Modo de teste para emails encaminhados - ATIVAR APENAS PARA TESTES
 define('MODO_TESTE_ENCAMINHADO', true);
@@ -645,8 +651,8 @@ class NubankEmailProcessor {
         $corpo .= "O pagamento deste cliente já foi processado automaticamente.\n\n";
         $corpo .= "Webhook Nubank - Sistema Automático";
         
-        $cabecalhos = "From: webhook@dominio.com\r\n";
-        $cabecalhos .= "Reply-To: webhook@dominio.com\r\n";
+        $cabecalhos = "From: webhook@seudominio.com\r\n";
+        $cabecalhos .= "Reply-To: webhook@seudominio.com\r\n";
         $cabecalhos .= "X-Mailer: PHP/" . phpversion();
         
         $resultado = mail($para, $assunto, $corpo, $cabecalhos);
@@ -706,8 +712,8 @@ class NubankEmailProcessor {
         $corpo .= "Formato: {$nomeCliente}|ID_BLESTA\n\n";
         $corpo .= "Webhook Nubank - Sistema Automático";
         
-        $cabecalhos = "From: webhook@dominio.com\r\n";
-        $cabecalhos .= "Reply-To: webhook@dominio.com\r\n";
+        $cabecalhos = "From: webhook@seudominio.com\r\n";
+        $cabecalhos .= "Reply-To: webhook@seudominio.com\r\n";
         $cabecalhos .= "X-Mailer: PHP/" . phpversion();
         
         // Usa mail() do PHP que funciona com exim no DirectAdmin
@@ -1189,12 +1195,12 @@ class NubankEmailProcessor {
             );
         }
         
-        // 4. CORREÇÃO CRÍTICA: Aplicar transação às faturas (mesmo processo do index_production.php)
+        // 4. Aplicar transação às faturas (processo crítico para funcionamento correto)
         if (isset($resultadoTransacao['blesta_transaction_id']) && $resultadoTransacao['blesta_transaction_id']) {
             $transactionId = $resultadoTransacao['blesta_transaction_id'];
             $this->log("ETAPA APLICAÇÃO: Aplicando transação #{$transactionId} às faturas");
             
-            // Aplicar para cada fatura (seguindo lógica do index_production.php)
+            // Aplicar para cada fatura
             $faturasParaAplicar = [];
             if ($faturaCorreta['tipo'] === 'individual' || $faturaCorreta['tipo'] === 'tolerancia') {
                 $faturasParaAplicar = [$faturaCorreta['faturas'][0]];
@@ -1251,7 +1257,7 @@ class NubankEmailProcessor {
     
     /**
      * Aplica uma transação a uma fatura específica no Blesta
-     * Baseado na implementação funcional do index_production.php
+     * Função crítica para o funcionamento correto do sistema
      */
     private function aplicarTransacaoAFatura($transaction_id, $invoice_id, $amount) {
         try {
@@ -1448,11 +1454,11 @@ class NubankEmailProcessor {
         $this->log("Enviando relatório de segurança - problemas encontrados: " . count($problemas));
         
         $para = ADMIN_EMAIL;
-        $assunto = 'ALERTA DE SEGURANCA - Webhook Nubank - Permissoes Incorretas';
+        $assunto = 'ALERTA DE SEGURANÇA - Webhook Nubank - Permissões Incorretas';
         
-        $corpo = "RELATORIO DE SEGURANCA - WEBHOOK NUBANK\n\n";
+        $corpo = "RELATÓRIO DE SEGURANÇA - WEBHOOK NUBANK\n\n";
         $corpo .= "Data/Hora: " . date('d/m/Y H:i:s') . "\n\n";
-        $corpo .= "PROBLEMAS DE PERMISSAO DETECTADOS:\n\n";
+        $corpo .= "PROBLEMAS DE PERMISSÃO DETECTADOS:\n\n";
         
         foreach ($problemas as $problema) {
             $corpo .= "Arquivo: {$problema['desc']} ({$problema['arquivo']})\n";
@@ -1461,20 +1467,20 @@ class NubankEmailProcessor {
             $corpo .= "Caminho completo: {$problema['caminho']}\n\n";
         }
         
-        $corpo .= "RECOMENDACOES DE SEGURANCA:\n\n";
-        $corpo .= "1. Execute os seguintes comandos para corrigir as permissoes:\n\n";
+        $corpo .= "RECOMENDAÇÕES DE SEGURANÇA:\n\n";
+        $corpo .= "1. Execute os seguintes comandos para corrigir as permissões:\n\n";
         
         foreach ($problemas as $problema) {
             $corpo .= "chmod {$problema['recomendada']} '{$problema['caminho']}'\n";
         }
         
-        $corpo .= "\n2. Verifique se apenas o usuario correto tem acesso aos arquivos\n";
-        $corpo .= "3. Considere mover arquivos sensiveis para fora do web root\n\n";
-        $corpo .= "ATENCAO: Este email so e enviado quando ha divergencias de seguranca.\n\n";
+        $corpo .= "\n2. Verifique se apenas o usuário correto tem acesso aos arquivos\n";
+        $corpo .= "3. Considere mover arquivos sensíveis para fora do web root\n\n";
+        $corpo .= "ATENÇÃO: Este email só é enviado quando há divergências de segurança.\n\n";
         $corpo .= "Sistema de Segurança - Webhook Nubank";
         
-        $cabecalhos = "From: security@dominio.com\r\n";
-        $cabecalhos .= "Reply-To: admin@dominio.com\r\n";
+        $cabecalhos = "From: security@seudominio.com\r\n";
+        $cabecalhos .= "Reply-To: admin@seudominio.com\r\n";
         $cabecalhos .= "X-Priority: 1\r\n";
         $cabecalhos .= "X-Mailer: PHP/" . phpversion() . "\r\n";
         $cabecalhos .= "Content-Type: text/plain; charset=UTF-8\r\n";
@@ -1483,9 +1489,9 @@ class NubankEmailProcessor {
         $resultado = mail($para, $assunto, $corpo, $cabecalhos);
         
         if ($resultado) {
-            $this->log("Relatorio de seguranca enviado para: {$para}");
+            $this->log("Relatório de segurança enviado para: {$para}");
         } else {
-            $this->log("ERRO: Falha ao enviar relatorio de seguranca - Verifique configuracao do servidor de email");
+            $this->log("ERRO: Falha ao enviar relatório de segurança - Verifique configuração do servidor de email");
             // Salva o relatório em arquivo como backup
             $this->salvarRelatorioSegurancaArquivo($problemas, $corpo);
         }
@@ -1500,14 +1506,14 @@ class NubankEmailProcessor {
         $this->log("Enviando alerta de segurança: {$tipoAlerta}");
         
         $para = ADMIN_EMAIL;
-        $assunto = 'ALERTA CRITICO DE SEGURANCA - Webhook Nubank - Acesso Negado';
+        $assunto = 'ALERTA CRÍTICO DE SEGURANÇA - Webhook Nubank - Acesso Negado';
         
-        $corpo = "ALERTA CRITICO DE SEGURANCA\n\n";
+        $corpo = "ALERTA CRÍTICO DE SEGURANÇA\n\n";
         $corpo .= "Data/Hora: " . date('d/m/Y H:i:s') . "\n";
         $corpo .= "Tipo de alerta: {$tipoAlerta}\n\n";
         
         if ($tipoAlerta === 'remetente_nao_autorizado') {
-            $corpo .= "TENTATIVA DE ACESSO COM REMETENTE NAO AUTORIZADO\n\n";
+            $corpo .= "TENTATIVA DE ACESSO COM REMETENTE NÃO AUTORIZADO\n\n";
             
             // Extrai informações do remetente para análise
             if (preg_match('/^From:\s*(.+)$/m', $emailContent, $matches)) {
@@ -1525,14 +1531,14 @@ class NubankEmailProcessor {
         
         $corpo .= "Esta tentativa foi BLOQUEADA automaticamente.\n";
         $corpo .= "Nenhum processamento foi realizado.\n\n";
-        $corpo .= "ACAO RECOMENDADA:\n";
-        $corpo .= "1. Verifique se esta tentativa e legitima\n";
-        $corpo .= "2. Se legitima, adicione o remetente a lista de autorizados\n";
-        $corpo .= "3. Se suspeita, investigue possivel tentativa de ataque\n\n";
+        $corpo .= "AÇÃO RECOMENDADA:\n";
+        $corpo .= "1. Verifique se esta tentativa é legítima\n";
+        $corpo .= "2. Se legítima, adicione o remetente à lista de autorizados\n";
+        $corpo .= "3. Se suspeita, investigue possível tentativa de ataque\n\n";
         $corpo .= "Sistema de Segurança - Webhook Nubank";
         
-        $cabecalhos = "From: security@dominio.com\r\n";
-        $cabecalhos .= "Reply-To: admin@dominio.com\r\n";
+        $cabecalhos = "From: security@seudominio.com\r\n";
+        $cabecalhos .= "Reply-To: admin@seudominio.com\r\n";
         $cabecalhos .= "X-Priority: 1\r\n";
         $cabecalhos .= "X-Mailer: PHP/" . phpversion() . "\r\n";
         $cabecalhos .= "Content-Type: text/plain; charset=UTF-8\r\n";
@@ -1541,9 +1547,9 @@ class NubankEmailProcessor {
         $resultado = mail($para, $assunto, $corpo, $cabecalhos);
         
         if ($resultado) {
-            $this->log("Alerta de seguranca enviado para: {$para}");
+            $this->log("Alerta de segurança enviado para: {$para}");
         } else {
-            $this->log("ERRO: Falha ao enviar alerta de seguranca - Verifique configuracao do servidor de email");
+            $this->log("ERRO: Falha ao enviar alerta de segurança - Verifique configuração do servidor de email");
             // Salva o alerta em arquivo como backup
             $this->salvarAlertaSegurancaArquivo($tipoAlerta, $corpo);
         }
@@ -1557,21 +1563,21 @@ class NubankEmailProcessor {
     private function salvarAlertaSegurancaArquivo($tipoAlerta, $corpoEmail) {
         $nomeArquivo = dirname(__FILE__) . '/alerta_seguranca_' . date('Y-m-d_H-i-s') . '.txt';
         
-        $conteudo = "ALERTA CRITICO DE SEGURANCA - WEBHOOK NUBANK\n";
+        $conteudo = "ALERTA CRÍTICO DE SEGURANÇA - WEBHOOK NUBANK\n";
         $conteudo .= "Data/Hora: " . date('d/m/Y H:i:s') . "\n";
         $conteudo .= "Tipo: {$tipoAlerta}\n";
         $conteudo .= "AVISO: Este alerta foi salvo em arquivo pois o envio por email falhou.\n\n";
         $conteudo .= $corpoEmail . "\n\n";
-        $conteudo .= "ACAO URGENTE NECESSARIA:\n";
+        $conteudo .= "AÇÃO URGENTE NECESSÁRIA:\n";
         $conteudo .= "1. Verifique este arquivo imediatamente\n";
         $conteudo .= "2. Configure um servidor de email no sistema\n";
         $conteudo .= "3. Investigue a tentativa de acesso bloqueada\n";
         
         if (file_put_contents($nomeArquivo, $conteudo, LOCK_EX) !== false) {
-            $this->log("Alerta critico salvo em arquivo: " . basename($nomeArquivo));
+            $this->log("Alerta crítico salvo em arquivo: " . basename($nomeArquivo));
             chmod($nomeArquivo, 0600); // Permissão segura
         } else {
-            $this->log("ERRO: Nao foi possivel salvar alerta em arquivo");
+            $this->log("ERRO: Não foi possível salvar alerta em arquivo");
         }
     }
     
@@ -1581,20 +1587,20 @@ class NubankEmailProcessor {
     private function salvarRelatorioSegurancaArquivo($problemas, $corpoEmail) {
         $nomeArquivo = dirname(__FILE__) . '/relatorio_seguranca_' . date('Y-m-d_H-i-s') . '.txt';
         
-        $conteudo = "RELATORIO DE SEGURANCA - WEBHOOK NUBANK\n";
+        $conteudo = "RELATÓRIO DE SEGURANÇA - WEBHOOK NUBANK\n";
         $conteudo .= "Data/Hora: " . date('d/m/Y H:i:s') . "\n";
-        $conteudo .= "AVISO: Este relatorio foi salvo em arquivo pois o envio por email falhou.\n\n";
+        $conteudo .= "AVISO: Este relatório foi salvo em arquivo pois o envio por email falhou.\n\n";
         $conteudo .= $corpoEmail . "\n\n";
-        $conteudo .= "ACAO NECESSARIA:\n";
+        $conteudo .= "AÇÃO NECESSÁRIA:\n";
         $conteudo .= "1. Configure um servidor de email no sistema\n";
-        $conteudo .= "2. Ou monitore manualmente os arquivos de relatorio\n";
-        $conteudo .= "3. Execute as correcoes de permissao listadas acima\n";
+        $conteudo .= "2. Ou monitore manualmente os arquivos de relatório\n";
+        $conteudo .= "3. Execute as correções de permissão listadas acima\n";
         
         if (file_put_contents($nomeArquivo, $conteudo, LOCK_EX) !== false) {
-            $this->log("Relatorio salvo em arquivo: " . basename($nomeArquivo));
+            $this->log("Relatório salvo em arquivo: " . basename($nomeArquivo));
             chmod($nomeArquivo, 0600); // Permissão segura
         } else {
-            $this->log("ERRO: Nao foi possivel salvar relatorio em arquivo");
+            $this->log("ERRO: Não foi possível salvar relatório em arquivo");
         }
     }
     
